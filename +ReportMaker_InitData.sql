@@ -1,10 +1,10 @@
 ﻿use KosarWebDBBank
-TRUNCATE TABLE [rpt].[tblGroups]
+TRUNCATE TABLE [rpt].[tblGroupColumns]
 TRUNCATE TABLE [rpt].[tblReportColumns]
-TRUNCATE TABLE [rpt].[tblSettingTemp]
+TRUNCATE TABLE [rpt].[tblReportColumnsTemp]
 TRUNCATE TABLE [rpt].[tblFilds]
 TRUNCATE TABLE [rpt].[tblFilter]
-INSERT [rpt].[tblGroups] ([fldGroupName], [fldFieldName], [fldType],[fldQuery], [fldIsGroupable], [fldFuncDef], [fldIsGroupedDef], [fldIncludedDef]) VALUES 
+INSERT [rpt].[tblGroupColumns] ([fldGroupName], [fldFieldName], [fldType],[fldQuery], [fldIsGroupable], [fldFuncDef], [fldIsGroupedDef], [fldIncludedDef]) VALUES 
  (N'rpt.VSanadHesabVam', N'fldDate', N'NUMBER', N'', 0, N'', 0, 1)
 ,(N'rpt.VSanadHesabVam', N'fldHesabType', N'LIST'
 --ListQuery
@@ -76,7 +76,7 @@ INSERT [rpt].[tblReportColumns] ([fldUserId], [fldGroupName], [fldReportName], [
 ,(N'hajjar', N'rpt.VSanadHesabVam', N'report1', N'fldBes', N'AVG', 0)
 ,(N'hajjar', N'rpt.VSanadHesabVam', N'report1', N'fldSanadID', N'MAX', 1)
 GO
---INSERT [rpt].[tblSettingTemp] ([Included], [fldUserId], [FieldName], [AggreegateFunc], [IsGrouped]) VALUES 
+--INSERT [rpt].[tblReportColumnsTemp] ([Included], [fldUserId], [FieldName], [AggreegateFunc], [IsGrouped]) VALUES 
 -- (0, N'hajjar', N'fldDate', N'', 0)
 --,(0, N'hajjar', N'fldTime', N'', 0)
 --,(1, N'hajjar', N'fldHesabType', N'MIN', 0)
