@@ -1,34 +1,38 @@
 ﻿use KosarWebDBBank;
-declare  @userId [nvarchar](150) ,@ReportName [nvarchar](50) ,@GroupName [nvarchar](50)
+declare  @userId [nvarchar](150) ,@ReportName [nvarchar](50)  ,@ChartReportName nvarchar(200),@GroupName [nvarchar](50)
 select @userId='hajjar'
 select @GroupName='rpt.VSanadHesabVam',@ReportName='report1'
 declare @QueryAndReportName  nvarchar(200),@connection nvarchar(100),
-@fldName  [nvarchar](50),@fldFormId bigint ,@btnRefreshReportID bigint,@fldReportID bigint,@tblReportID bigint
+@fldName  [nvarchar](50),@fldFormId bigint ,@fldLevelID bigint ,@btnRefreshReportID bigint,@fldReportID bigint,@tblReportID bigint
+
 
 
 
 select @fldName='rptcnfg_'+@GroupName+'_'+ @ReportName
 
---پپیدا کردن شناسه فرم مربوطه
+--پیدا کردن شناسه فرم مربوطه
 SELECT @fldFormId=fldID FROM  [tblForms] WHERE  fldName= @fldName
 --حذف کوئری و گزارش قبلی تعریف شده
-select @QueryAndReportName=N'rpt_Generated_Form'+CAST(@fldFormId AS VARCHAR) 
-delete from [tblQuery] where fldName=@QueryAndReportName
+select @QueryAndReportName=N'rpt_Form'+CAST(@fldFormId AS VARCHAR) 
+,@ChartReportName=N'chartReport_Form'+CAST(@fldFormId AS VARCHAR) 
+delete from [tblQuery] where [fldName]=@QueryAndReportName 
+delete from [tblReport] where [fldName]=@QueryAndReportName or [fldName]=@ChartReportName
+delete from [tblAPI] where [fldName]=@QueryAndReportName
 --******************** کویری های اتوکمپلت و لیست ************************
 delete from [tblQuery] where fldName in (
 SELECT  
-'autoQuery_'+CAST(@fldFormId AS VARCHAR)+'_'+f.[fldFieldName]
+'autoQuery_'+CAST(@fldFormId AS VARCHAR)+'_'+f.[fldFieldName]+'_'+CAST(f.fldID as varchar(max))
    FROM [rpt].[tblFilter] as f
   outer APPLY 
    ( 
-SELECT g.fldType ,g.fldFieldName,g.fldQuery  from  [rpt].[tblGroups]as g
+SELECT g.fldType ,g.fldFieldName,g.fldQuery  from  [rpt].[tblGroupColumns]as g
 		 where g.fldFieldName=f.fldFieldName and  g.fldGroupName=@GroupName 
 	) S 
 where  f.fldReportName=@ReportName  and f.fldFieldName=S.fldFieldName
 and S.fldQuery<>'' and (S.fldType='STRING' or S.fldType='LIST')
 )
 --******************
-delete from [tblReport] where [fldName]=@QueryAndReportName
+
 
 --پیدا کردن شناسه دکمه ساخت کوئری گزارش در فرم مربوطه
 SELECT @btnRefreshReportID=[fldID]
@@ -44,6 +48,8 @@ delete [dbo].[tblFildDependence]
 where [fldFildID]=@fldReportID and  [fldFildDepID]=@btnRefreshReportID
 
 delete from [dbo].[tblForms] where fldName= @fldName
+delete from [dbo].[tblFormAccessLevels] where fldFormID= @fldFormId  and fldName='NULL'
+
 delete from tblFormFilds where fldFormID= @fldFormId
  
 INSERT INTO [dbo].[tblForms]
@@ -73,12 +79,12 @@ INSERT INTO [dbo].[tblForms]
            --,<fldInputCount, int,>
            ,'simple'--,<fldPreQuery, nvarchar(200),>
            --<fldAfterQuery, nvarchar(max),>
-           ,''--,<fldScript, nvarchar(max),>
+           ,N''--,<fldScript, nvarchar(max),>
            ,''--,<fldStyle, nvarchar(max),>
            ,0--,<fldOnCloseCheck, bit,>
            ,''--,<fldOnCloseCheckQuery, nvarchar(250),>
            --,<fldProgram, nvarchar(250),>
-           ,'گزارش ساز'--,<fldGroupName, nvarchar(200),>
+           ,'اتوگزارش'--,<fldGroupName, nvarchar(200),>
            ,0--,<fldRefreshByChilds, bit,>
            ,0--,<fldAccess, bit,>
            ,0--,<fldLog, bit,>
@@ -90,10 +96,216 @@ INSERT INTO [dbo].[tblForms]
 
 -- read form ID
 SELECT @fldFormId=fldID FROM  [tblForms] WHERE  fldName= @fldName
+       
 
-select @QueryAndReportName=N'rpt_Generated_Form'+CAST(@fldFormId AS VARCHAR) ,@connection='BANK'
+select @QueryAndReportName=N'rpt_Form'+CAST(@fldFormId AS VARCHAR) 
+,@ChartReportName=N'chartReport_Form'+CAST(@fldFormId AS VARCHAR) 
+,@connection='BANK'
 
 
+UPDATE [dbo].[tblForms]
+   SET [fldScript] = cast('
+//*********Coloring********** */
+// Some random pastel backgrounds with saturation in range 25-95% and lightness in range 85-95%:
+    const hues=[266,111,70,288,187,17,45,2555,100,60,207,160,9,30];
+    const backgrounds=[];
+    const borders=[];
+    for (let  f = 0; f < hues.length; f++){
+        var h=hues[f];
+        var s=95;//saturation  
+        var l=68; //lightness    
+
+        var a=0.8
+        backgrounds[f]="hsl(" +(h) + '','' + s + ''%,'' +l + ''%, 0.6)'' ;
+        borders[f]="hsl(" +(h) + '','' + s + ''%,'' +l + ''%)'';
+    }
+  let getColor=function getColor(i){ 
+        // Define desired object
+     var obj = {
+       background: backgrounds[i%backgrounds.length],
+       border: borders[i%backgrounds.length],
+     };
+     // Return it
+     return obj;
+    }
+//*********Coloring End********** */
+
+//*********LabelsAndSeriess********** */
+ function getLabelsAndSeriess(apiData,type=''line''){ 
+      var fields = Object.keys(apiData[0]);
+      var serieslabels=fields.slice(1,fields.length);
+      let series=[];
+      let labels=[];
+
+      serieslabels.forEach((item, index)=>
+          {
+          if(type==''pie'')
+              series.push({
+              data:[],
+              label:item,
+              backgroundColor:[],
+              borderColor: [],
+              borderWidth: 1,
+
+              fill: ''origin''      // 0: fill to ''origin''
+              });
+          else
+              series.push({
+              data:[],
+              label:item,
+              backgroundColor: getColor(index).background,
+              borderColor: getColor(index).background.border,
+              borderWidth: 3,
+
+              fill: ''origin''      // 0: fill to ''origin''
+              });
+          
+          }
+      )
+
+      apiData.reduce((acc,value)=>{
+          serieslabels.forEach(item=>{
+              var seri= series.find(element=>element.label==item);
+              seri.data.push(value[item]);
+              if(type==''pie'')
+              {
+               seri.backgroundColor.push(getColor(seri.data.length).background);
+               seri.borderColor.push(getColor(seri.data.length).background);
+              }
+          })
+              labels.push(value[fields[0]]);
+
+          return acc
+      },[]);    
+    
+    // Define desired object
+     var obj = {
+       series: series,
+       labels: labels,
+     };
+     // Return it
+     return obj;
+}
+//*********LabelsAndSeriess End********** */
+Chart.defaults.font.family = ''IRANSans'';
+/*var operatorSanadsData = api(''operatorSanadsChart'');*/
+var ctx = ''ReportChart'';
+var temp=12;
+
+function refreshChart(){
+temp=temp+100;
+
+console.log(temp);
+var operatorSanadsData ={
+    "Code": 200,
+    "Error": false,
+    "OK": true,
+    "ExData": [
+        {
+            "fldOperator": "1",
+            "تعداداسناد": temp
+        },
+        {
+            "fldOperator": "2",
+            "تعداداسناد": "4053"
+        },
+        {
+            "fldOperator": "3",
+            "تعداداسناد": "11121"
+        },
+        {
+            "fldOperator": "5",
+            "تعداداسناد": "11652"
+        },
+        {
+            "fldOperator": "6",
+            "تعداداسناد": "1"
+        },
+        {
+            "fldOperator": "8",
+            "تعداداسناد": "6195"
+        },
+        {
+            "fldOperator": "9",
+            "تعداداسناد": "8661"
+        },
+        {
+            "fldOperator": "10",
+            "تعداداسناد": "138"
+        },
+        {
+            "fldOperator": "11",
+            "تعداداسناد": "8837"
+        },
+        {
+            "fldOperator": "12",
+            "تعداداسناد": "8247"
+        },
+        {
+            "fldOperator": "70",
+            "تعداداسناد": "2"
+        },
+        {
+            "fldOperator": "123",
+            "تعداداسناد": "8"
+        },
+        {
+            "fldOperator": "9900",
+            "تعداداسناد": "33620"
+        },
+        {
+            "fldOperator": "9960",
+            "تعداداسناد": "1434"
+        },
+        {
+            "fldOperator": "9961",
+            "تعداداسناد": "27478"
+        },
+        {
+            "fldOperator": "9962",
+            "تعداداسناد": "1708"
+        },
+        {
+            "fldOperator": "9991",
+            "تعداداسناد": "7370"
+        },
+        {
+            "fldOperator": "9999",
+            "تعداداسناد": "7358"
+        }
+    ],
+    "Msg": null
+}
+operatorSanadsData = api(''' as nvarchar(max))+cast(@QueryAndReportName as nvarchar(max))
++cast(N''');
+var operatorSanads_LabelsAndSeries = getLabelsAndSeriess(operatorSanadsData.ExData);
+
+if (typeof(myChart) != "undefined")
+myChart.destroy();
+
+myChart = new Chart(ctx, {
+    type: ''bar'',
+    data: {
+        labels: operatorSanads_LabelsAndSeries.labels,
+        datasets:operatorSanads_LabelsAndSeries.series
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true,
+                stacked: true
+            }
+    }
+        }
+});
+		   } //refreshChart          
+           
+refreshChart();
+$(''#rpt_btnBuildQuery'').click(function() {
+  refreshChart();
+});
+   ' as nvarchar(max))
+ WHERE fldID=@fldFormId
 
 DECLARE  @filters rpt.FilterType
 INSERT INTO @filters ([fldFieldName],[fldFieldType],[fldOperator],[fldOprand])
@@ -105,7 +317,7 @@ SELECT
    FROM [rpt].[tblFilter] as f
   outer APPLY 
    ( 
-SELECT g.fldType ,g.fldFieldName  from  [rpt].[tblGroups]as g
+SELECT g.fldType ,g.fldFieldName  from  [rpt].[tblGroupColumns]as g
 		 where g.fldFieldName=f.fldFieldName and  g.fldGroupName=@GroupName 
 	) S 
 where  f.fldReportName=@ReportName  and f.fldFieldName=S.fldFieldName
@@ -199,7 +411,7 @@ SELECT
       ,[fldSubmitQuery]
       ,[fldSubmitRedirect]
       ,[fldLabelText]
-      ,'autoQuery_'+ CAST(@fldFormId AS VARCHAR)+'_'+f.[fldFieldName]--[fldListQuery]
+      ,'autoQuery_'+ CAST(@fldFormId AS VARCHAR)+'_'+f.[fldFieldName]--,[fldListQuery]
       ,[fldListTitle]
       ,[fldframeURL]
       ,[fldframeHeight]
@@ -239,7 +451,7 @@ SELECT
       ,[fldSubmitLog]
       ,[fldSync]
       ,[fldSubmitSuccessfullMessage]
-       ,'گزارش ساز'--,[fldGroupName]
+       ,'اتوگزارش'--,[fldGroupName]
 	   from @filters AS f
  outer APPLY 
    ( 
@@ -377,13 +589,13 @@ INSERT INTO [dbo].[tblFormFilds]
       ,[fldSubmitLog]
       ,[fldSync]
       ,[fldSubmitSuccessfullMessage]
-       ,'گزارش ساز'--,[fldGroupName]
+       ,'اتوگزارش'--,[fldGroupName]
   FROM [rpt].[tblFilds]
   where fldFieldType ='DEFAULT'
-  /*افزودن فیلد گزارش*/
+  /*افزودن فیلد گزارش جدولی و نموداری*/
 INSERT INTO [dbo].[tblFormFilds]
            ([fldName]
-           ,[fldFildName]
+		   ,[fldFildName]
            ,[fldFormID]
            ,[fldOrder]
            ,[fldStyle]
@@ -444,12 +656,21 @@ INSERT INTO [dbo].[tblFormFilds]
            ,[fldSubmitLog]
            ,[fldSync]
            ,[fldSubmitSuccessfullMessage]
-           ,[fldGroupName])VALUES
-  (N'گزارش پویا', N'DynamicReport',@fldFormId, 1000,
+           ,[fldGroupName])
+VALUES
+(N'گزارش جدولی', N'TableReport',@fldFormId, 1000,
 N'z-index: 10; height: 100%; width: 100%; font-size: 1.5vw; ',
 N'width: 50%; height: 10%; z-index: 10; font-size: 1.5vw; text-align: right; direction: rtl; display: inline; align-items: center; position: absolute; left: 10%; top: 10%; overflow: scroll;',
 N'width: 100%;  z-index: 10; font-size: 1.5vw; text-align: right; direction: rtl;  align-items: center;left: 10%; top: 10%; overflow: scroll;',
 N'', N'', N'REPORT', 0, 1, NULL, N'', N'', NULL, 1, NULL, N'', N'', N'', N'', N'', N'', N'', NULL, NULL, NULL, NULL, 0, NULL, N'', 0, 0, 0, N'', 0, 0, N'', 0, 0, 0, 0, 0, 0, N'', 0, NULL, NULL, 0, 0, NULL,@QueryAndReportName, N'', N'', NULL, 1, 0, 0, N'', 0, N'', N'')
+,(N'گزارش نموداری', N'ChartReport',@fldFormId, 1000,
+N'z-index: 10; height: 100%; width: 100%; font-size: 1.5vw; ',
+N'width: 50%; height: 10%; z-index: 10; font-size: 1.5vw; text-align: right; direction: rtl; display: inline; align-items: center; position: absolute; left: 10%; top: 10%; overflow: scroll;',
+N'width: 100%;  z-index: 10; font-size: 1.5vw; text-align: right; direction: rtl;  align-items: center;left: 10%; top: 10%; overflow: scroll;',
+N'', N'', N'REPORT', 0, 1, NULL, N'', N'', NULL, 1, NULL, N'', N'', N'', N'', N'', N'', N'', NULL, NULL, NULL, NULL, 0, NULL, N'', 0, 0, 0, N'', 0, 0, N'', 0, 0, 0, 0, 0, 0, N'', 0, NULL, NULL, 0, 0, NULL,@ChartReportName, N'', N'', NULL,0, 0, 0, N'', 0, N'', N'')
+
+
+
 
 --***********************ساخت کویری*********************
 DECLARE  @setting rpt.SettingType
@@ -465,10 +686,10 @@ SELECT
   FROM [rpt].[tblFilter] as f
   outer APPLY 
    ( 
-	SELECT g.fldType ,s.FieldName,g.fldFieldName, s.fldReportName  from   [rpt].[tblSetting] as s
+	SELECT g.fldType ,s.FieldName,g.fldFieldName, s.fldReportName  from   [rpt].[tblReportColumns] as s
      outer APPLY 
    ( 
-   SELECT g.fldType ,g.fldFieldName  from  [rpt].[tblGroups]as g
+   SELECT g.fldType ,g.fldFieldName  from  [rpt].[tblGroupColumns]as g
 	 where g.fldFieldName=S.FieldName and  g.fldGroupName=@GroupName 
    ) G 
 	 where   fldGroupName=@GroupName and s.fldReportName=@ReportName and s.fldUserId=@userId
@@ -477,7 +698,7 @@ SELECT
 
 INSERT INTO @setting (FieldName, AggreegateFunc,IsGrouped)
 select FieldName,AggreegateFunc ,IsGrouped
-from rpt.tblSetting
+from rpt.tblReportColumns
 where fldGroupName=@GroupName and fldReportName=@ReportName and fldUserId=@userId
 
 
@@ -497,33 +718,20 @@ INSERT INTO [dbo].[tblQuery]
            ,[fldProgram]
            ,[fldGroupName])
 	 SELECT  
-	'autoQuery_'+ CAST(@fldFormId AS VARCHAR)+'_'+f.[fldFieldName]
+	'autoQuery_'+ CAST(@fldFormId AS VARCHAR)+'_'+f.[fldFieldName]+'_'+CAST(f.fldID as varchar(max))
      ,S.fldQuery
      ,@connection
      ,NULL
-     ,'گزارش ساز '
+     ,'اتوگزارش'
    FROM [rpt].[tblFilter] as f
   outer APPLY 
    ( 
-SELECT g.fldType ,g.fldFieldName,g.fldQuery  from  [rpt].[tblGroups]as g
+SELECT g.fldType ,g.fldFieldName,g.fldQuery  from  [rpt].[tblGroupColumns]as g
 		 where g.fldFieldName=f.fldFieldName and  g.fldGroupName=@GroupName 
 	) S 
 where  f.fldReportName=@ReportName  and f.fldFieldName=S.fldFieldName
 and S.fldQuery<>'' and (S.fldType='STRING' or S.fldType='LIST')
 --********************افزودن کویری************************
-
-
---set @command='SELECT TOP (100) [fldID]
---      ,[fldBedBesFlag]
---      ,[fldDate]
---      ,[fldTime]
---      ,[fldHesabType]
---      ,[fldHesabID]
---      ,[fldBed]
---      ,[fldBes]
---      ,[fldSanadID]
-    
---  FROM [VsanadCustomer]'
 INSERT INTO [dbo].[tblQuery]
            ([fldName]
            ,[fldCommand]
@@ -535,11 +743,61 @@ INSERT INTO [dbo].[tblQuery]
            ,@command
            ,@connection
            ,NULL
-           ,'گزارش ساز ')
---*******************افزودن گزارش*****************
+           ,'اتوگزارش')
+--*******************افزودن گزارش جدولی و نموداری و ای پی آی*****************
 INSERT [tblReport] ( [fldName], [fldTitle], [fldHeadTitle], [fldQuery], [fldGroupName], [fldIntialize], [fldPerLineIntialize], [fldShowAllColumns], [fldDesignID], [fldSpecial], [fldSpecialPattern], [fldFootTitle], [fldQueryTitle], [fldBorder], [fldTableCSSClass], [fldStyle], [fldTokenEncrypt], [fldScript], [fldShowSQLError], [fldUserReorder], [fldTrStyle], [fldSelectRow], [fldMulitpleSelect], [fldKeyField], [fldPrintHeadTitle], [fldPrintFootTitle], [fldSettingHidden], [fldProgram], [fldPrintUseHeader], [fldEndLinePage], [fldEndLine], [fldExportEnable], [fldRightClick], [fldExportDefault]) 
 VALUES 
-( @QueryAndReportName, N'گزارش اتومات' +@ReportName, N'', @QueryAndReportName, N'گزارش ساز', NULL, NULL, 1, NULL, 0, N'', N'', N'simple', 1, N'', N'', NULL, NULL, NULL, 1, NULL, 1, 0, N'', N'', N'', 1, NULL, NULL, NULL, NULL, 1, NULL, NULL)
+ ( @QueryAndReportName, N'گزارش جدولی' +@ReportName, N'', @QueryAndReportName, N'اتوگزارش', NULL, NULL, 1, NULL, 0, N'', N'', N'simple', 1, N'', N'', NULL, NULL, NULL, 1, NULL, 1, 0, N'', N'', N'', 1, NULL, NULL, NULL, NULL, 1, NULL, NULL)
+,( @ChartReportName, N'گزارش نموداری' +@ReportName
+--[fldHeadTitle]
+,N'<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.2.0/chart.min.js" integrity="sha512-VMsZqo0ar06BMtg0tPsdgRADvl0kDHpTbugCBBrL55KmucH6hP9zWdLIWY//OTfMnzz6xWQRxQqsUFefwHuHyg==" crossorigin="anonymous">
+ </script>
+  <div id="convas"> <canvas id="ReportChart"></canvas></div>'
+, N'simple', N'اتوگزارش', NULL, NULL, 0, NULL, 1, N''
+, N''--[fldFootTitle]
+, N'simple', 0, N'', N'', NULL, NULL, NULL, 0, NULL, 1, 0, N'', N'', N'', 1, NULL, NULL, NULL, NULL, 0, NULL, NULL)
+INSERT INTO [dbo].[tblAPI]
+           ([fldName]
+           ,[fldQuery]
+           ,[fldResualt]
+           ,[fldProgram]
+           ,[fldGroupName])
+     VALUES
+           (@QueryAndReportName--<fldName, nvarchar(50),>
+           ,@QueryAndReportName--<fldQuery, nvarchar(150),>
+           ,1--<fldResualt, bit,>
+           ,NULL--<fldProgram, nvarchar(250),>
+           ,N'اتوگزارش'--<fldGroupName, nvarchar(200),>
+		   )
+INSERT INTO [dbo].[tblFormAccessLevels]
+           ([fldName]
+           ,[fldFormID]
+           ,[fldProgram])
+     VALUES
+           ('NULL'
+           ,@fldFormId
+           ,NULL)   
+
+
+
+SELECT @fldLevelID=[fldID]
+  FROM [KosarWebDBBank].[dbo].[tblFormAccessLevels]
+  where fldName='NULL' and fldFormID=@fldFormId
+INSERT INTO [dbo].[tblFormAccessDetail]
+           ([fldLevelID]
+           ,[fldFildName]
+           ,[fldVisible]
+           ,[fldDisable]
+           ,[fldProgram]
+           ,[fldFildID])
+     VALUES
+           (@fldLevelID
+           ,'API:'+@QueryAndReportName
+           ,1
+           ,0
+           ,NULL
+           ,NULL)
+
 
 select @tblReportID=fldId From [tblReport]
 where [fldName]=@QueryAndReportName
@@ -551,7 +809,7 @@ where fldFormID=@fldFormId and fldFildName= 'rpt_btnBuildQuery'
 
 SELECT @fldReportID=[fldID]
 FROM [dbo].[tblFormFilds]
-where fldFormID=@fldFormId and fldFildName='DynamicReport'
+where fldFormID=@fldFormId and fldFildName='TableReport'
 INSERT INTO [dbo].[tblFildDependence]
            (
 		   [fldFildID]
@@ -562,10 +820,7 @@ INSERT INTO [dbo].[tblFildDependence]
            ,[fldFildDepID])
 		   values(@fldReportID,'rpt_btnBuildQuery','simple',null,null, @btnRefreshReportID)
 
-
---*****************افزودن فیلد های گزارش *************
-
-
+--[FormGenerator]*****************افزودن فیلد های گزارش *************
  delete FROM [tblReportFilde]
   where [fldReportID]=@tblReportID 
 INSERT INTO [dbo].[tblReportFilde]
@@ -610,18 +865,8 @@ END
     ELSE   [FieldName]
 END 
 ,1,'',0,'','',2,0,0,0
-  FROM [rpt].[tblSetting] s
+  FROM [rpt].[tblReportColumns] s
     outer apply(SELECT Top 1 [fldValue]   FROM [dbo].[tblDictionary] D 
   where D.fldKey=s.[FieldName]
 	) d
-  where fldGroupName=@GroupName and fldReportName=@ReportName and fldUserId=@userId 
-
-
-
-
-
-  --******************************************************
-
-
-/****** Object:  StoredProcedure [rpt].[DeletReport]    Script Date: 13/03/1400 12:50:13 ب.ظ ******/
-SET ANSI_NULLS ON
+  where fldGroupName=@GroupName and fldReportName=@ReportName and fldUserId=@userId
