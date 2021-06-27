@@ -1,12 +1,21 @@
 ﻿use KosarWebDBBank
+TRUNCATE TABLE [rpt].[tblGroups]
+TRUNCATE TABLE [rpt].[tblReports]
 TRUNCATE TABLE [rpt].[tblGroupColumns]
 TRUNCATE TABLE [rpt].[tblReportColumns]
 TRUNCATE TABLE [rpt].[tblReportColumnsTemp]
 TRUNCATE TABLE [rpt].[tblFilds]
 TRUNCATE TABLE [rpt].[tblFilter]
-INSERT [rpt].[tblGroupColumns] ([fldGroupName], [fldFieldName], [fldType],[fldQuery], [fldIsGroupable], [fldFuncDef], [fldIsGroupedDef], [fldIncludedDef]) VALUES 
+INSERT INTO [rpt].[tblGroups]([fldTitle],[fldName],[fldViewName],[fldConnectionName])VALUES
+	(N'rpt.VSanadHesabVam',N'rpt.VSanadHesabVam',N'rpt.VSanadHesabVam','BANK')
+	,(N'rpt.VsanadCustomer',N'rpt.VsanadCustomer',N'rpt.VsanadCustomer','BANK')
+INSERT INTO [rpt].[tblReports]([fldName],[fldUserId],[fldIsChart],[fldChartType],[fldTableType])VALUES
+           (N'report1',N'hajjar',0,N'bar',N'blue')	
+           ,(N'report2',N'hajjar',0,N'bar',N'blue')	
+           ,( N'sanadReport',N'hajjar',0,N'bar',N'blue')	
+INSERT INTO [rpt].[tblGroupColumns] ([fldGroupName], [fldFieldName], [fldType],[fldQuery], [fldIsGroupable], [fldFuncDef], [fldIsGroupedDef], [fldIncludedDef]) VALUES 
  (N'rpt.VSanadHesabVam', N'fldDate', N'NUMBER', N'', 0, N'', 0, 1)
-,(N'rpt.VSanadHesabVam', N'fldHesabType', N'LIST'
+ ,(N'rpt.VSanadHesabVam', N'fldHesabType', N'LIST'
 --ListQuery
 , N'
     SELECT fldHesabTypeName,
@@ -136,8 +145,7 @@ EXEC	[rpt].[FormGenerator]
 		@ReportName = 'report1',
 		@GroupName = 'rpt.VSanadHesabVam'	
 
-
-		EXEC	[rpt].[FormGenerator]
+EXEC	[rpt].[FormGenerator]
 		@userId = 'hajjar',
 		@ReportName = 'sanadReport',
 		@GroupName = 'rpt.VsanadCustomer'
