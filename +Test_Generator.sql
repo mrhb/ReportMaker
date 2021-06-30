@@ -7,14 +7,14 @@ INSERT INTO @setting (FieldName, AggreegateFunc,IsGrouped)
   ('fldName', 'Avg', 'TRUE'), 
   ('fldVamType', 'Count', 'TRUE'), 
   ('fldVamGroup','Min','False');
-INSERT INTO @filters ([fldID],[fldFieldName],[fldFieldType],[fldOperator],[fldOprand])
+INSERT INTO @filters ([fldFieldName],[fldFieldType],[fldOperator],[fldOprand])
   VALUES
-   (1, 'fldName1', 'STRING','in'  ,'#fldName1#')
-  ,(2, 'fldqwme2', 'STRING','like','fte5cdesrt')
-  ,(4, 'fldName2', 'NUMBER','x>=a','fte56')
-  ,(3, 'fldqwme2', 'NUMBER','b<x<=a','fte56#srt');
+   ( 'fldName1', 'STRING','in'  ,'#fldName1#')
+  ,( 'fldqwme2', 'STRING','like','fte5cdesrt')
+  ,( 'fldName2', 'NUMBER','x>=a','fte56')
+  ,( 'fldqwme2', 'NUMBER','b<x<=a','fte56#srt');
 
-EXEC	 [rpt].[ReportGenerator]
+EXEC	 [rpt].[QueryGenerator]
 		@Setting = @setting,
 		@Filters = @filters,
 		@ReportName = 'rpt.vsanadVam',
@@ -22,4 +22,3 @@ EXEC	 [rpt].[ReportGenerator]
 		@pageSize =50,
 		@Query = @query OUTPUT
 SELECT	@query as N'Result Query'
-
