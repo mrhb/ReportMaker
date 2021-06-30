@@ -1,12 +1,10 @@
 ﻿use KosarWebDBBank;
-declare  @userId [nvarchar](150) ,@ReportName [nvarchar](50)  ,@ChartReportName nvarchar(200),@GroupName [nvarchar](50)
+declare  @userId [nvarchar](150) ,@ReportName [nvarchar](50)  ,@GroupName [nvarchar](50)
 select @userId='hajjar'
 select @GroupName='rpt.VSanadHesabVam',@ReportName='report1'
 
-    declare @isChart bit, @chartType  [nvarchar](10) ,@QueryAndReportName  nvarchar(200) ,@connection nvarchar(100),
+   declare @isChart bit, @chartType  [nvarchar](10) ,@QueryAndReportName  nvarchar(200) ,@ChartReportName nvarchar(200),@connection nvarchar(100),
 @fldName  [nvarchar](50),@fldFormId bigint  ,@fldLevelID bigint ,@btnRefreshReportID bigint,@fldReportID bigint,@tblReportID bigint
-
-
 
 
     select @isChart=fldIsChart ,@chartType =fldChartType
@@ -65,6 +63,13 @@ SELECT g.fldType , g.fldFieldName, g.fldQuery
 
     delete [dbo].[tblFildDependence]
 where [fldFildID]=@fldReportID and [fldFildDepID]=@btnRefreshReportID
+    
+   select @tblReportID=fldId
+    From [tblReport]
+    where [fldName]=@QueryAndReportName
+
+    delete FROM [tblReportFilde]
+    where [fldReportID]=@tblReportID
 
     delete from [dbo].[tblForms] where fldName= @fldName
     delete from [dbo].[tblFormAccessLevels] where fldFormID= @fldFormId and fldName='NULL'
@@ -619,6 +624,7 @@ SELECT g.fldType , g.fldFieldName
     --***********************ساخت کویری*********************
     DECLARE  @setting rpt.SettingType
 		,@command nvarchar(max)
+		,@command_title nvarchar(max)
     delete @filters
     INSERT INTO @filters
         ([fldFieldName],[fldFieldType],[fldOperator],[fldOprand])
@@ -657,6 +663,14 @@ SELECT g.fldType , g.fldFieldName
 		@index =1,
 		@pageSize =50,
 		@Query = @command OUTPUT
+
+    EXEC	 [rpt].[QueryGenerator_title]
+		@Setting = @setting,
+		@Filters = @filters,
+		@ReportName = @GroupName,
+		@index =1,
+		@pageSize =50,
+		@Query = @command_title OUTPUT
 
     --******************** کویری های اتوکمپلت و لیست ************************
     INSERT INTO [dbo].[tblQuery]
@@ -703,26 +717,15 @@ SELECT g.fldType , g.fldFieldName, g.fldQuery
         ,[fldGroupName])
     VALUES
         (@QueryAndReportName+N'_title'
-           ,N'  select round(count(*) / #lstPageSize#,1 )+1  as fldName From('+@command+')  q'
+           ,N'  select round(count(*) / #lstPageSize#,1 )+1  as fldName From('+@command_title+')  q'
            , @connection
            , NULL
            , 'اتوگزارش')
     --*******************افزودن گزارش جدولی و نموداری و ای پی آی*****************
     declare @style nvarchar(max);
-    select @style=fldStyle
-    From [rpt].tblReports as r
-outer apply (
- select *
-        From [rpt].tblTables as f
-        where r.fldTableType=f.fldName 
- ) ff
-    where r.fldname=@ReportName
+    declare @headTitle nvarchar(max);
 
-    INSERT [tblReport]
-        ( [fldName], [fldTitle], [fldHeadTitle], [fldQuery], [fldGroupName], [fldIntialize], [fldPerLineIntialize], [fldShowAllColumns], [fldDesignID], [fldSpecial], [fldSpecialPattern], [fldFootTitle], [fldQueryTitle], [fldBorder], [fldTableCSSClass], [fldStyle], [fldTokenEncrypt], [fldScript], [fldShowSQLError], [fldUserReorder], [fldTrStyle], [fldSelectRow], [fldMulitpleSelect], [fldKeyField], [fldPrintHeadTitle], [fldPrintFootTitle], [fldSettingHidden], [fldProgram], [fldPrintUseHeader], [fldEndLinePage], [fldEndLine], [fldExportEnable], [fldRightClick], [fldExportDefault])
-    VALUES
-        ( @QueryAndReportName, N'گزارش جدولی' +@ReportName,  --fldHeadTitle
-      cast(N'
+    select @headTitle= cast(N'
       <style>
 .pagination {
 }
@@ -752,7 +755,7 @@ outer apply (
  <script>
  var count = #Q:fldName#
  var pageIndex = 1
- if( $( "#PageIndex " ).val()){
+ if( $( "#txtPageIndex " ).val()){
   pageIndex = $( "#txtPageIndex " ).val();
   }
   
@@ -779,7 +782,20 @@ outer apply (
   }); 
    </script>
 
-      ' as nvarchar(max))  , @QueryAndReportName, N'اتوگزارش', NULL, 1, NULL, 0, N'', N'',  @QueryAndReportName+N'_title', 1, N'table'
+      ' as nvarchar(max));
+    select @style=fldStyle
+    From [rpt].tblReports as r
+outer apply (
+ select *
+        From [rpt].tblTables as f
+        where r.fldTableType=f.fldName 
+ ) ff
+    where r.fldname=@ReportName
+
+    INSERT [tblReport]
+        ( [fldName], [fldTitle], [fldHeadTitle], [fldQuery], [fldGroupName], [fldIntialize], [fldPerLineIntialize], [fldShowAllColumns], [fldDesignID], [fldSpecial], [fldSpecialPattern], [fldFootTitle], [fldQueryTitle], [fldBorder], [fldTableCSSClass], [fldStyle], [fldTokenEncrypt], [fldScript], [fldShowSQLError], [fldUserReorder], [fldTrStyle], [fldSelectRow], [fldMulitpleSelect], [fldKeyField], [fldPrintHeadTitle], [fldPrintFootTitle], [fldSettingHidden], [fldProgram], [fldPrintUseHeader], [fldEndLinePage], [fldEndLine], [fldExportEnable], [fldRightClick], [fldExportDefault])
+    VALUES
+        ( @QueryAndReportName, N'گزارش جدولی' +@ReportName, @headTitle, @QueryAndReportName, N'اتوگزارش', NULL, NULL, 1, NULL, 0, N'', N'',  @QueryAndReportName+N'_title', 1, N'table'
  --fldStyle
  ,@style, NULL, NULL, NULL, 1, NULL, 1, 0, N'', N'', N'', 1, NULL, NULL, NULL, NULL, 1, NULL, NULL)
 ,
@@ -858,8 +874,13 @@ outer apply (
     values(@fldReportID, 'rpt_btnBuildQuery', 'simple', null, null, @btnRefreshReportID)
 
     --[FormGenerator]*****************افزودن فیلد های گزارش *************
-    delete FROM [tblReportFilde]
-  where [fldReportID]=@tblReportID
+	declare @hasGroupBy bit;
+	SELECT @hasGroupBy= CASE
+		WHEN SUM(CASE WHEN IsGrouped = 1 THEN 1 ELSE 0 END)<1  THEN 'FALSE'
+		ELSE 'TRUE'
+	END
+    From @Setting
+
     INSERT INTO [dbo].[tblReportFilde]
         (
         [fldReportID]
@@ -894,14 +915,14 @@ outer apply (
         SELECT TOP (1000)
             @tblReportID,
             CASE
-	WHEN IsGrouped<1 and AggreegateFunc!=''  THEN   ISNULL(D.fldValue,[FieldName])+'_'+ AggreegateFunc
-    WHEN IsGrouped<1 and AggreegateFunc=''  THEN   ISNULL(D.fldValue,[FieldName])+'_COUNT'  
-    ELSE   ISNULL(D.fldValue,[FieldName])
-END 
-, CASE
-	WHEN IsGrouped<1 and AggreegateFunc!=''  THEN  [FieldName]+'_'+ AggreegateFunc
-    WHEN IsGrouped<1 and AggreegateFunc=''  THEN  [FieldName]+'_COUNT'  
-    ELSE   [FieldName]
+				WHEN @hasGroupBy>0 and IsGrouped<1 and AggreegateFunc!=''  THEN   ISNULL(D.fldValue,[FieldName])+'_'+ AggreegateFunc
+				WHEN @hasGroupBy>0 and IsGrouped<1 and AggreegateFunc=''  THEN   ISNULL(D.fldValue,[FieldName])+'_COUNT'  
+				ELSE   ISNULL(D.fldValue,[FieldName])
+			END 
+			, CASE
+				WHEN @hasGroupBy>0 and IsGrouped<1 and AggreegateFunc!=''  THEN  [FieldName]+'_'+ AggreegateFunc
+				WHEN @hasGroupBy>0 and IsGrouped<1 and AggreegateFunc=''  THEN  [FieldName]+'_COUNT'  
+				ELSE   [FieldName]
 END 
 , 1, '', 0, '', '', 2, 0, 0, 0
         FROM [rpt].[tblReportColumns] s
