@@ -1,4 +1,5 @@
-﻿use KosarWebDBBank
+﻿USE KosarWebDBShahed
+GO
 TRUNCATE TABLE [rpt].[tblGroups]
 TRUNCATE TABLE [rpt].[tblReports]
 TRUNCATE TABLE [rpt].[tblGroupColumns]
