@@ -17,11 +17,11 @@ VALUES
 INSERT INTO [rpt].[tblReports]
 	([fldName],[fk_fldGroupTitle],[fldUserId],[fldIsChart],[fldChartType],[fldTableType])
 VALUES
-	(N'report1',N'rpt.VSanadHesabVam', N'hajjar', 0, N'bar', N'blue')	
+	(N'گزارش اول',N'rpt.VSanadHesabVam', N'hajjar', 0, N'bar', N'blue')	
            ,
-	(N'report2',N'rpt.VSanadHesabVam',N'hajjar', 0, N'bar', N'green')	
+	(N'گزارش دوم',N'rpt.VSanadHesabVam',N'hajjar', 0, N'bar', N'green')	
            ,
-	( N'sanadReport',N'rpt.VsanadCustomer', N'hajjar', 0, N'bar', N'blue')
+	( N'گزراش سند',N'rpt.VsanadCustomer', N'hajjar', 0, N'bar', N'blue')
 INSERT INTO [rpt].[tblGroupColumns]
 	([fldGroupName], [fldFieldName], [fldType],[fldQuery], [fldIsGroupable], [fldFuncDef], [fldIsGroupedDef], [fldIncludedDef])
 VALUES
