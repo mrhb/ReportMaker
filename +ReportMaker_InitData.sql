@@ -306,15 +306,12 @@ GO
 
 EXEC	[rpt].[FormGenerator]
 		@userId = 'hajjar',
-		@ReportName = 'report2',
-		@GroupName = 'rpt.VSanadHesabVam'
+		@ReportId = 2
+		
+EXEC	[rpt].[FormGenerator]
+		@userId = 'hajjar',
+		@ReportId = 1
 
 EXEC	[rpt].[FormGenerator]
 		@userId = 'hajjar',
-		@ReportName = 'report1',
-		@GroupName = 'rpt.VSanadHesabVam'
-
-EXEC	[rpt].[FormGenerator]
-		@userId = 'hajjar',
-		@ReportName = 'sanadReport',
-		@GroupName = 'rpt.VsanadCustomer'
+		@ReportId = 3
