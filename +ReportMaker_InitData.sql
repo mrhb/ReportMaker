@@ -1,4 +1,4 @@
-﻿USE KosarWebDBBank
+﻿USE KosarWebDBReporter
 GO
 TRUNCATE TABLE [rpt].[tblGroups]
 TRUNCATE TABLE [rpt].[tblReports]
@@ -11,9 +11,9 @@ TRUNCATE TABLE [rpt].[tblFilter]
 INSERT INTO [rpt].[tblGroups]
 	([fldTitle],[fldName],[fldViewName],[fldConnectionName])
 VALUES
-	(N'rpt.VSanadHesabVam', N'rpt.VSanadHesabVam', N'rpt.VSanadHesabVam', 'BANK')
+	(N'حسابها و وام ها ', N'rpt.VSanadHesabVam', N'rpt.VSanadHesabVam', 'BANK')
 	,
-	(N'rpt.VsanadCustomer', N'rpt.VsanadCustomer', N'rpt.VsanadCustomer', 'BANK')
+	(N'اسناد مشتتری', N'rpt.VsanadCustomer', N'rpt.VsanadCustomer', 'BANK')
 INSERT INTO [rpt].[tblReports]
 	([fldName],[fk_fldGroupTitle],[fldUserId],[fldIsChart],[fldChartType],[fldTableType])
 VALUES
@@ -105,29 +105,20 @@ fldHesabCode LIKE ''%''+replace(#text#,'' '',''%'')+''%'') and fldEnd = 1 and fl
 	(N'rpt.VsanadCustomer', N'fldLastUpdateDate', N'NUMBER', N'', 0, N'', 0, 1)
 GO
 INSERT [rpt].[tblReportColumns]
-	([fldUserId], [fldGroupName], [fldReportName], [FieldName], [AggreegateFunc], [IsGrouped])
+	([fldUserId],[fldReportId], [fldGroupName], [fldReportName], [FieldName], [AggreegateFunc], [IsGrouped])
 VALUES
-	(N'hajjar', N'rpt.VSanadHesabVam', N'report2', N'fldHesabID', N'MAX', 1)
-,
-	(N'hajjar', N'rpt.VSanadHesabVam', N'report2', N'fldBed', N'COUNT', 0)
-,
-	(N'hajjar', N'rpt.VSanadHesabVam', N'report2', N'fldBes', N'AVG', 0)
+	 (N'hajjar',2, N'rpt.VSanadHesabVam', N'report2', N'fldHesabID', N'MAX', 1)
+	,(N'hajjar',2, N'rpt.VSanadHesabVam', N'report2', N'fldBed', N'COUNT', 0)
+	,(N'hajjar',2, N'rpt.VSanadHesabVam', N'report2', N'fldBes', N'AVG', 0)
 
-,
-	(N'hajjar', N'rpt.VsanadCustomer', N'sanadReport', N'fldHesabType', N'MIN', 0)
-,
-	(N'hajjar', N'rpt.VsanadCustomer', N'sanadReport', N'fldBed', N'MIN', 0)
-,
-	(N'hajjar', N'rpt.VsanadCustomer', N'sanadReport', N'fldBes', N'MIN', 1)
+	,(N'hajjar',3, N'rpt.VsanadCustomer', N'sanadReport', N'fldHesabType', N'MIN', 0)
+	,(N'hajjar',3, N'rpt.VsanadCustomer', N'sanadReport', N'fldBed', N'MIN', 0)
+	,(N'hajjar',3, N'rpt.VsanadCustomer', N'sanadReport', N'fldBes', N'MIN', 1)
 
-,
-	(N'hajjar', N'rpt.VSanadHesabVam', N'report1', N'fldDate', N'', 0)
-,
-	(N'hajjar', N'rpt.VSanadHesabVam', N'report1', N'fldHesabID', N'MIN', 0)
-,
-	(N'hajjar', N'rpt.VSanadHesabVam', N'report1', N'fldBes', N'AVG', 0)
-,
-	(N'hajjar', N'rpt.VSanadHesabVam', N'report1', N'fldSanadID', N'MAX', 1)
+	,(N'hajjar',1, N'rpt.VSanadHesabVam', N'report1', N'fldDate', N'', 0)
+	,(N'hajjar',1, N'rpt.VSanadHesabVam', N'report1', N'fldHesabID', N'MIN', 0)
+	,(N'hajjar',1, N'rpt.VSanadHesabVam', N'report1', N'fldBes', N'AVG', 0)
+	,(N'hajjar',1, N'rpt.VSanadHesabVam', N'report1', N'fldSanadID', N'MAX', 1)
 GO
 --INSERT [rpt].[tblReportColumnsTemp] ([Included], [fldUserId], [FieldName], [AggreegateFunc], [IsGrouped]) VALUES 
 -- (0, N'hajjar', N'fldDate', N'', 0)
@@ -146,31 +137,21 @@ GO
 --,(0, N'hajjar', N'fldLastUpdateDate', N'', 0)
 --GO
 INSERT INTO [rpt].[tblFilter]
-	([fldUserId],[fldReportName],[fldFieldName],[fldOperator],[fldOprand])
+	([fldUserId],[fldReportId],[fldReportName],[fldFieldName],[fldOperator],[fldOprand])
 VALUES
-	(N'hajjar', N'report2', N'fldHesabID', N'x=a', '')
-,
-	(N'hajjar', N'report2', N'fldBed', N'x>=a', '')
-,
-	(N'hajjar', N'report2', N'fldBes', N'x>=a', '') 
-,
-	(N'hajjar', N'report2', N'fldBes', N'x>=a', '') 
+	 (N'hajjar',2, N'report2', N'fldHesabID', N'x=a', '')
+	,(N'hajjar',2, N'report2', N'fldBed', N'x>=a', '')
+	,(N'hajjar',2, N'report2', N'fldBes', N'x>=a', '') 
+	,(N'hajjar',2, N'report2', N'fldBes', N'x>=a', '') 
 
-,
-	(N'hajjar', N'sanadReport', N'fldHesabType', N'x=a', '')
-,
-	(N'hajjar', N'sanadReport', N'fldBed', N'x>=a', '')
-,
-	(N'hajjar', N'sanadReport', N'fldBes', N'x>=a', '')
+	,(N'hajjar',3, N'sanadReport', N'fldHesabType', N'x=a', '')
+	,(N'hajjar',3, N'sanadReport', N'fldBed', N'x>=a', '')
+	,(N'hajjar',3, N'sanadReport', N'fldBes', N'x>=a', '')
 
-,
-	(N'hajjar', N'report1', N'fldDate', N'x>=a', '')
-,
-	(N'hajjar', N'report1', N'fldHesabID', N'x=a', '')
-,
-	(N'hajjar', N'report1', N'fldBes', N'x>=a', '')
-,
-	(N'hajjar', N'report1', N'fldSanadID', N'x>=a', 1)
+	,(N'hajjar',1, N'report1', N'fldDate', N'x>=a', '')
+	,(N'hajjar',1, N'report1', N'fldHesabID', N'x=a', '')
+	,(N'hajjar',1, N'report1', N'fldBes', N'x>=a', '')
+	,(N'hajjar',1, N'report1', N'fldSanadID', N'x>=a', 1)
 GO
 
 INSERT [rpt].[tblFilds]

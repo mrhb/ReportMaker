@@ -11,8 +11,8 @@ INSERT INTO KosarWebDBAutoReport.[dbo].[tblQuery]
       ,[fldName]
       ,[fldCommand]
       ,[fldConnectionName]
-      ,[fldProgram]
+      ,'AutoReporter'
       ,[fldGroupName]
   FROM [KosarWebDBBank].[dbo].[tblQuery]
-where fldGroupName= 'ê“«—‘ ”«“'
+where fldGroupName= '⁄Øÿ≤ÿßÿ±ÿ¥ ÿ≥ÿßÿ≤'
 SET IDENTITY_INSERT KosarWebDBAutoReport.[dbo].[tblQuery] OFF
